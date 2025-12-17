@@ -198,3 +198,7 @@ metagpt/ext/sela/results/*
 
 metagpt/ext/aflow/data
 metagpt/ext/aflow/scripts/optimized
+
+# Config files with secrets
+config/config2.yaml
+config/vault.yaml
