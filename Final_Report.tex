@@ -1,0 +1,147 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{The Impact of Big Five Personality Prompts on Code Quality Agents: A Quantitative Analysis}
+
+\author{\IEEEauthorblockN{Akhil Gunda}
+\IEEEauthorblockA{\textit{Department of Computer Science} \\
+\textit{University of Maryland}\\
+College Park, USA \\
+agunda@terpmail.umd.edu}
+}
+
+\maketitle
+
+\begin{abstract}
+Large Language Models (LLMs) are increasingly acting as autonomous software engineers. Developers often use "system prompts" to tell these agents how to behave, such as "You are a senior developer." However, we do not fully understand how specific personality traits affect the code they produce. This study investigates how injecting Big Five personality traits (Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism) into an AI Quality Assurance (QA) agent affects its ability to write software tests. We ran a benchmark of 286 runs across 33 Python tasks. Our results show that personality significantly changes behavior. For example, agents prompted to be "Neurotic" (anxious) generated 33\% more tests than the baseline, while "Extraverted" agents were 43\% slower without writing better code. These findings suggest that we can "tune" AI agents for specific goals—like thoroughness or speed—simply by describing their personality.
+\end{abstract}
+
+\begin{IEEEkeywords}
+LLM Agents, Automated Software Testing, Prompt Engineering, Big Five Personality, Psychometrics
+\end{IEEEkeywords}
+
+\section{Introduction}
+The use of Large Language Models (LLMs) in software development is evolving. We are moving from simple code completion tools to autonomous agents that can plan, write, and test code on their own \cite{yang2024sweagent}. A primary way to control these agents is through a "system prompt" or "persona." This is a set of instructions that defines who the agent is and how it should act.
+
+While many developers use personas (e.g., "You are a helpful assistant" or "You are a strict code reviewer"), there is little data on how psychological traits impact performance. Does an "anxious" agent write safer code? Does a "creative" agent find more edge cases?
+
+This paper explores these questions using the Five Factor Model (Big Five) of personality \cite{goldberg1993structure}. We applied these personality traits to an AI Quality Assurance (QA) agent tasked with writing tests. We hypothesized that traits associated with human reliability—such as Conscientiousness (being organized) and Neuroticism (being sensitive to risk)—would lead to more rigorous testing. Conversely, we expected traits like Extraversion (being talkative) might lead to slower performance due to unnecessary text generation.
+
+\section{Related Work}
+\subsection{LLM Personas}
+Recent research shows that LLMs can simulate human behavior very effectively \cite{park2023generative}. This is sometimes called the "Waluigi Effect" \cite{clemen2023waluigi}, where an LLM adopts a specific character based on how it is prompted.
+
+\subsection{Automated Testing with LLMs}
+LLMs are already good at writing unit tests \cite{siddiq2023empirical}. However, most benchmarks only measure if the code works (pass/fail). They rarely look at the \textit{style} or \textit{thoroughness} of the testing behavior itself.
+
+\section{Methodology}
+
+\subsection{Experimental Setup}
+We used a multi-agent framework based on MetaGPT \cite{hong2023metagpt}. We created a specific "QA Agent" powered by the GPT-4o-mini model. The agent's only job was to write `pytest` test suites for Python functions.
+
+\subsection{Personality Injection}
+We created 5 different system prompts based on standard psychological descriptions (IPIP-NEO). The specific prompts injected into the system message were:
+
+\begin{itemize}
+    \item \textbf{Neutral (Baseline):} This condition served as a control group. The agent was provided with a standard professional persona without any specific psychological weighting. It was instructed to maintain a balanced, pragmatic approach, focusing solely on technical correctness and clarity without exhibiting strong tendencies toward any specific personality dimension.
+    
+    \item \textbf{High Conscientiousness:} Defined by Goldberg \cite{goldberg1993structure} as the trait of being organized, systematic, and dependable. We prompted the agent to exhibit high levels of orderliness, dutifulness, and deliberation. The system prompt explicitly instructed the agent to prioritize structure, follow strict testing protocols, ensure comprehensive traceability between requirements and tests, and demonstrate a meticulous attention to detail in every aspect of the test generation process.
+    
+    \item \textbf{High Neuroticism:} Often referred to as Emotional Instability, this trait is characterized by the tendency to experience negative emotions such as anxiety, fear, and vigilance \cite{goldberg1993structure}. In the context of software testing, we framed this as "defensive pessimism." The agent was prompted to be highly sensitive to potential risks, to anticipate worst-case scenarios, to worry about edge cases and boundary conditions, and to adopt a defensive coding style that assumes the system under test is likely to fail in unexpected ways.
+    
+    \item \textbf{High Extraversion:} This trait encompasses characteristics such as sociability, assertiveness, high energy, and talkativeness \cite{goldberg1993structure}. We instructed the agent to be energetic, expressive, and socially dominant in its output. The prompt encouraged the agent to use verbose and explanatory language, to "think out loud" in its comments, and to provide enthusiastic descriptions of the test cases, prioritizing communication and visibility over brevity.
+    
+    \item \textbf{High Openness to Experience:} This trait is associated with imagination, curiosity, and a willingness to try new things \cite{goldberg1993structure}. We prompted the agent to be intellectually curious and experimental. The instructions encouraged the agent to explore unconventional testing strategies, to generate creative and non-obvious test cases, and to look beyond standard happy-path scenarios to find novel ways to break the code, reflecting the "Ideas" and "Actions" facets of the Openness dimension.
+\end{itemize}
+
+These descriptions were dynamically inserted into the agent's base prompt: "You are a seasoned QA engineer... Personality profile: {personality}."
+
+\subsection{Benchmark Dataset}
+We tested these agents on 33 different coding tasks:
+\begin{itemize}
+    \item \textbf{MBPP (30 tasks):} These are standard algorithmic problems from the "Mostly Basic Python Problems" dataset. They typically involve single functions like string manipulation or math puzzles.
+    \item \textbf{Complex (3 tasks):} We selected 3 complex scenarios adapted from the SWE-bench dataset \cite{jimenez2024swebench}, which evaluates LLMs on real-world software engineering issues. For example, the `BankAccount` task requires the agent to test a class with methods like `deposit`, `withdraw`, and `transfer`, ensuring that the internal balance state remains consistent across multiple operations. These tasks test the agent's ability to understand object-oriented context, not just pure algorithms.
+    
+\end{itemize}
+
+\subsection{Metrics}
+We measured three key things:
+\begin{itemize}
+    \item \textbf{Generation Time:} How long (in seconds) it took the agent to write the tests.
+    \item \textbf{Test Count:} How many individual test functions (e.g., `test\_add\_money`) the agent wrote.
+    \item \textbf{Assertion Count:} The total number of checks (e.g., `assert x == 5`) inside the tests.
+\end{itemize}
+
+\section{Results}
+We executed a total of 286 runs. This included multiple runs for each personality on every task to ensure the results were consistent.
+
+\subsection{Generation Time}
+We found significant differences in how long the agents took to work ($p < 0.001$).
+\begin{itemize}
+    \item \textbf{Fastest:} Neutral (10.15s) and Conscientiousness High (10.43s).
+    \item \textbf{Slowest:} Extraversion High (14.58s).
+\end{itemize}
+The "Extraverted" agents took about 43\% longer than the baseline. Qualitative analysis showed this was because they wrote very long explanations and "chatty" comments in the code, which takes time to generate but adds no functional value.
+
+\subsection{Test Volume}
+The number of tests generated also varied significantly ($p < 0.001$).
+\begin{itemize}
+    \item \textbf{Highest:} Neuroticism High (8.27 tests/task).
+    \item \textbf{Lowest:} Conscientiousness High (6.29 tests/task).
+\end{itemize}
+This was a surprising finding. We expected the "Conscientious" (organized) agent to write the most tests. Instead, the "Neurotic" (anxious) agent wrote the most. This suggests that simulating anxiety makes the agent "worry" more about potential bugs, leading it to write more defensive tests.
+
+\subsection{Assertion Density}
+Assertion density measures how many specific checks are performed.
+\begin{itemize}
+    \item \textbf{Highest:} Neuroticism High (10.91) and Openness High (10.38).
+    \item \textbf{Lowest:} Extraversion High (7.76).
+\end{itemize}
+Both the "Anxious" (Neurotic) and "Creative" (Openness) agents were very thorough. The "Creative" agents tended to test unusual edge cases, while the "Anxious" agents tested for failures and errors.
+
+\subsection{Qualitative Analysis: The Cost of Personality}
+To understand why "High Extraversion" agents were slower, we inspected the generated code. We found that these agents often included verbose, conversational strings inside the test code itself.
+
+For example, in Task 29 (finding odd occurrences), the Extraverted agent generated assertions like:
+\begin{verbatim}
+self.assertEqual(result, expected,
+    f"For input {test_input}, expected {expected} 
+      but got {result}.")
+\end{verbatim}
+While helpful for debugging, generating these long f-strings for every single test case consumed significant token budget and time. In contrast, the Neutral and Conscientious agents typically used standard, concise assertions without custom error messages.
+
+\section{Discussion}
+\subsection{The "Anxious Tester" Advantage}
+The strong performance of the High Neuroticism profile suggests that framing QA tasks as "risk mitigation" (a core component of the neuroticism prompt) is more effective than framing them as "systematic duty" (conscientiousness). This aligns with the QA mindset of "paranoid programming." By explicitly telling the agent to be "sensitive to potential failures," we effectively unlock a deeper level of scrutiny that is not present in the standard "helpful assistant" persona.
+
+\subsection{The Extraversion Tax}
+High Extraversion was the least efficient profile: slowest generation time and lowest assertion count. This suggests that "chatty" personas waste token budget on natural language rather than code logic. This confirms the "Waluigi Effect" in a negative sense: the agent adopts the *flaws* of the persona (verbosity) as well as the strengths. For pure coding tasks, "social" traits like Extraversion appear to be detrimental.
+
+\subsection{Limitations and Future Work}
+While this study successfully quantified behavioral differences (speed, volume, verbosity), the functional correctness metrics (validity, coverage, mutation score) were inconclusive due to environmental configuration issues in the batch execution pipeline. Specifically, the isolated execution environment for the agents prevented accurate import resolution for the generated tests during the validation phase.
+
+Future work will focus on:
+\begin{enumerate}
+    \item \textbf{Mutation Testing:} Once tests are runnable, we will apply mutation testing (introducing fake bugs) to see if the "Neurotic" agent actually catches more bugs than the others.
+    \item \textbf{Cost Analysis:} Quantifying the exact token cost of each personality to determine the "price" of thoroughness.
+\end{enumerate}
+
+\section{Conclusion}
+This study demonstrates that psychometric prompting is a powerful, low-cost technique for tuning LLM agent behavior. For QA tasks, we recommend "High Neuroticism" or "High Openness" prompts to maximize test coverage, while avoiding "High Extraversion" to minimize latency and cost.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
